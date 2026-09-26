@@ -14,3 +14,8 @@ jobs:
           cache: maven
       - name: Build and test
         run: mvn --batch-mode verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pinot-jev-jar
+          path: target/pinot-jev-0.1.0.jar
+          if-no-files-found: error
