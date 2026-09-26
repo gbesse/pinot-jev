@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.pinot.common.function.FunctionRegistry;
 import org.apache.pinot.spi.annotations.ScalarFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,6 +107,10 @@ class JevClientTest {
         .getAnnotation(ScalarFunction.class));
     assertNotNull(JevFunctions.class.getMethod("jevProbability", String.class, String.class)
         .getAnnotation(ScalarFunction.class));
+    assertTrue(FunctionRegistry.containsFunction("jevAll"));
+    assertTrue(FunctionRegistry.containsFunction("jevAny"));
+    assertTrue(FunctionRegistry.containsFunction("jevProbability"));
+    assertNotNull(FunctionRegistry.getFunctionInfo("jevAll", 2));
     assertEquals(0, JevFunctions.jevAll(null, "[]"));
   }
 
