@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -19,6 +19,10 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** A bounded, process-local Jev client. Keys, row values and remote bodies never enter exceptions. */
@@ -160,36 +164,60 @@ final class JevClient {
         .header("Content-Type", "application/json")
         .header("Authorization", "Bearer " + key)
         .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)).build();
+    CompletableFuture<HttpResponse<byte[]>> pending = http.sendAsync(request, boundedBodyHandler());
     try {
-      HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
-      try (InputStream stream = response.body()) {
-        if (response.statusCode() != 200) {
-          throw new IllegalStateException("Jev HTTP " + response.statusCode());
+      HttpResponse<byte[]> response = pending.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+      if (response.statusCode() != 200) throw new IllegalStateException("Jev HTTP " + response.statusCode());
+      JsonNode answers = JSON.readTree(response.body()).path("answers");
+      double[] values = new double[count];
+      for (int i = 0; i < count; i++) {
+        JsonNode answer = answers.path("q" + i);
+        JsonNode probability = answer.path("noul");
+        if (!"noul".equals(answer.path("type").asText()) || !probability.isNumber()) {
+          throw new IllegalStateException("invalid Jev Noul answer");
         }
-        byte[] bytes = stream.readNBytes(MAX_RESPONSE + 1);
-        if (bytes.length > MAX_RESPONSE) throw new IllegalStateException("Jev response too large");
-        JsonNode answers = JSON.readTree(bytes).path("answers");
-        double[] values = new double[count];
-        for (int i = 0; i < count; i++) {
-          JsonNode answer = answers.path("q" + i);
-          JsonNode probability = answer.path("noul");
-          if (!"noul".equals(answer.path("type").asText()) || !probability.isNumber()) {
-            throw new IllegalStateException("invalid Jev Noul answer");
-          }
-          double value = probability.doubleValue();
-          if (!Double.isFinite(value) || value < 0 || value > 1) {
-            throw new IllegalStateException("Jev probability outside [0,1]");
-          }
-          values[i] = value;
+        double value = probability.doubleValue();
+        if (!Double.isFinite(value) || value < 0 || value > 1) {
+          throw new IllegalStateException("Jev probability outside [0,1]");
         }
-        return values;
+        values[i] = value;
       }
-    } catch (IOException e) {
-      throw new IllegalStateException("Jev transport failure");
+      return values;
+    } catch (TimeoutException e) {
+      throw new IllegalStateException("Délai Jev dépassé / Jev response deadline exceeded / Plazo de respuesta Jev agotado");
+    } catch (IOException | ExecutionException e) {
+      throw new IllegalStateException("Échec du transport Jev / Jev transport failure / Fallo del transporte Jev");
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new IllegalStateException("Jev request interrupted");
+      throw new IllegalStateException("Requête Jev interrompue / Jev request interrupted / Solicitud Jev interrumpida");
+    } finally {
+      if (!pending.isDone()) pending.cancel(true);
     }
+  }
+
+  private static HttpResponse.BodyHandler<byte[]> boundedBodyHandler() {
+    return ignored -> new HttpResponse.BodySubscriber<byte[]>() {
+      private final HttpResponse.BodySubscriber<byte[]> delegate = HttpResponse.BodySubscribers.ofByteArray();
+      private Flow.Subscription subscription;
+      private long received;
+      private boolean stopped;
+      @Override public CompletionStage<byte[]> getBody() { return delegate.getBody(); }
+      @Override public void onSubscribe(Flow.Subscription value) {
+        subscription = value;
+        delegate.onSubscribe(value);
+      }
+      @Override public void onNext(List<ByteBuffer> buffers) {
+        if (stopped) return;
+        for (ByteBuffer buffer : buffers) received += buffer.remaining();
+        if (received > MAX_RESPONSE) {
+          stopped = true;
+          subscription.cancel();
+          delegate.onError(new IOException("Réponse trop grande / Response too large / Respuesta demasiado grande"));
+        } else delegate.onNext(buffers);
+      }
+      @Override public void onError(Throwable error) { if (!stopped) delegate.onError(error); }
+      @Override public void onComplete() { if (!stopped) delegate.onComplete(); }
+    };
   }
 
   int requestCount() { return requests.get(); }
