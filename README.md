@@ -23,7 +23,7 @@ Avec Java 17 et Maven :
 mvn --batch-mode verify
 ```
 
-Déposer `target/pinot-jev-0.1.0.jar` dans le répertoire `/plugins` des instances Pinot qui exécutent les requêtes, définir `JEV_API_KEY` dans leur environnement, puis les redémarrer. Pinot découvre les méthodes publiques annotées `@ScalarFunction` dans `org.apache.pinot.function.jev`. Vérifier le chargement de la fonction sur une instance de test avant déploiement dans un cluster. Une clé dans le client SQL ne configure pas les serveurs Pinot.
+Déposer `target/pinot-jev-0.1.1.jar` dans le répertoire `/plugins` des instances Pinot qui exécutent les requêtes, définir `JEV_API_KEY` dans leur environnement, puis les redémarrer. Pinot découvre les méthodes publiques annotées `@ScalarFunction` dans `org.apache.pinot.function.jev`. Vérifier le chargement de la fonction sur une instance de test avant déploiement dans un cluster. Une clé dans le client SQL ne configure pas les serveurs Pinot.
 
 ### Coût et limites
 
@@ -50,7 +50,7 @@ With Java 17 and Maven:
 mvn --batch-mode verify
 ```
 
-Place `target/pinot-jev-0.1.0.jar` in `/plugins` on Pinot instances that execute the queries, set `JEV_API_KEY` in their process environment, and restart them. Pinot discovers public methods annotated `@ScalarFunction` in `org.apache.pinot.function.jev`. Verify function loading on a test instance before cluster deployment. A key set in the SQL client does not configure Pinot servers.
+Place `target/pinot-jev-0.1.1.jar` in `/plugins` on Pinot instances that execute the queries, set `JEV_API_KEY` in their process environment, and restart them. Pinot discovers public methods annotated `@ScalarFunction` in `org.apache.pinot.function.jev`. Verify function loading on a test instance before cluster deployment. A key set in the SQL client does not configure Pinot servers.
 
 ### Cost and limits
 
@@ -77,7 +77,7 @@ Con Java 17 y Maven:
 mvn --batch-mode verify
 ```
 
-Coloque `target/pinot-jev-0.1.0.jar` en `/plugins` de las instancias Pinot que ejecutan las consultas, configure `JEV_API_KEY` en el entorno de sus procesos y reinícielas. Pinot detecta métodos públicos con `@ScalarFunction` en `org.apache.pinot.function.jev`. Verifique la carga de las funciones en una instancia de prueba antes de desplegar en un clúster. Una clave definida en el cliente SQL no configura los servidores Pinot.
+Coloque `target/pinot-jev-0.1.1.jar` en `/plugins` de las instancias Pinot que ejecutan las consultas, configure `JEV_API_KEY` en el entorno de sus procesos y reinícielas. Pinot detecta métodos públicos con `@ScalarFunction` en `org.apache.pinot.function.jev`. Verifique la carga de las funciones en una instancia de prueba antes de desplegar en un clúster. Una clave definida en el cliente SQL no configura los servidores Pinot.
 
 ### Coste y límites
 
@@ -104,3 +104,10 @@ Licence MIT. Sans affiliation avec TypeSafe ou Apache Pinot.
 MIT license. Not affiliated with TypeSafe or Apache Pinot.
 
 Licencia MIT. Sin afiliación con TypeSafe ni Apache Pinot.
+
+
+FR : `JEV_TIMEOUT_MS` borne l’attente de la réponse complète, y compris un corps bloqué après les en-têtes. Le corps est limité à 1 Mio pendant sa réception ; les échecs ne sont pas mis en cache et libèrent les demandes identiques en attente. Le délai ne prouve pas que le fournisseur a arrêté son travail. Les tests utilisent un vrai serveur HTTP local ; aucun cluster ni modèle réel n’est mesuré.
+
+EN: `JEV_TIMEOUT_MS` bounds waiting for the complete response, including a body stalled after headers. Bodies are capped at 1 MiB while being received; failures are not cached and release coalesced waiters. A deadline does not prove the provider stopped its work. Tests use a real local HTTP server; no cluster or live model is measured.
+
+ES: `JEV_TIMEOUT_MS` limita la espera de la respuesta completa, incluido un cuerpo bloqueado tras las cabeceras. El cuerpo se limita a 1 MiB durante su recepción; los fallos no se guardan en caché y liberan las solicitudes idénticas en espera. El plazo no demuestra que el proveedor detuvo su trabajo. Las pruebas usan un servidor HTTP local real; no se mide un clúster ni un modelo real.

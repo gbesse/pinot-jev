@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -112,6 +114,60 @@ class JevClientTest {
     assertTrue(FunctionRegistry.containsFunction("jevProbability"));
     assertNotNull(FunctionRegistry.getFunctionInfo("jevAll", 2));
     assertEquals(0, JevFunctions.jevAll(null, "[]"));
+  }
+
+  @Test
+  void headersCannotLeaveBodyOrCoalescedWaitersUnbounded() throws Exception {
+    CountDownLatch headers = new CountDownLatch(1);
+    CountDownLatch releaseBody = new CountDownLatch(1);
+    AtomicInteger attempts = new AtomicInteger();
+    server.createContext("/stall", exchange -> {
+      attempts.incrementAndGet();
+      try {
+        exchange.sendResponseHeaders(200, 0);
+        exchange.getResponseBody().write('{');
+        exchange.getResponseBody().flush();
+        headers.countDown();
+        releaseBody.await(5, TimeUnit.SECONDS);
+      } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+      finally { exchange.close(); }
+    });
+    JevClient client = new JevClient("test-key", "http://127.0.0.1:" + server.getAddress().getPort()
+        + "/stall", "jev-1.13.0", 400, 3);
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      Future<?> first = pool.submit(() -> assertThrows(IllegalStateException.class,
+          () -> client.evaluate("synthetic", List.of("condition"))));
+      assertTrue(headers.await(2, TimeUnit.SECONDS));
+      Future<?> second = pool.submit(() -> assertThrows(IllegalStateException.class,
+          () -> client.evaluate("synthetic", List.of("condition"))));
+      assertTimeoutPreemptively(Duration.ofSeconds(2), () -> { first.get(); second.get(); });
+      assertEquals(1, attempts.get());
+      assertEquals(1, client.requestCount());
+    } finally { releaseBody.countDown(); pool.shutdownNow(); }
+  }
+
+  @Test
+  void oversizedBodyFailsWithoutCachingOrLeakingRemoteContent() throws Exception {
+    AtomicInteger attempts = new AtomicInteger();
+    server.createContext("/oversized", exchange -> {
+      attempts.incrementAndGet();
+      try {
+        byte[] bytes = new byte[1048577];
+        Arrays.fill(bytes, (byte)'x');
+        exchange.sendResponseHeaders(200, bytes.length);
+        exchange.getResponseBody().write(bytes);
+      } finally { exchange.close(); }
+    });
+    JevClient client = new JevClient("test-key", "http://127.0.0.1:" + server.getAddress().getPort()
+        + "/oversized", "jev-1.13.0", 3000, 3);
+    for (int i=0;i<2;i++) {
+      IllegalStateException error = assertThrows(IllegalStateException.class,
+          () -> client.evaluate("synthetic", List.of("condition")));
+      assertTrue(error.getMessage().contains("transport failure"));
+      assertNull(error.getCause());
+    }
+    assertEquals(2, attempts.get());
   }
 
   private JevClient client(int maxRequests) {
