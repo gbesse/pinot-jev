@@ -38,7 +38,7 @@ class JevClientTest {
         assertEquals("jev-1.13.0", body.path("model").asText());
         assertEquals("The ending was good. Watch it!", body.path("state").path("value").asText());
         assertEquals(2, body.path("questions").size());
-        byte[] response = ("{\"answers\":{\"q0\":{\"type\":\"noul\",\"noul\":0.91},"
+        byte[] response = ("{\"model\":\"jev-1.13.0\",\"answers\":{\"q0\":{\"type\":\"noul\",\"noul\":0.91},"
             + "\"q1\":{\"type\":\"noul\",\"noul\":0.84}}}")
             .getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -168,6 +168,46 @@ class JevClientTest {
       assertNull(error.getCause());
     }
     assertEquals(2, attempts.get());
+  }
+
+
+  @Test
+  void rejectsUnboundOrAmbiguousEnvelopesWithoutPoisoningTheCache() throws Exception {
+    java.util.concurrent.atomic.AtomicReference<String> raw = new java.util.concurrent.atomic.AtomicReference<>();
+    AtomicInteger attempts = new AtomicInteger();
+    server.createContext("/envelope", exchange -> {
+      attempts.incrementAndGet();
+      try {
+        exchange.getRequestBody().readAllBytes();
+        byte[] bytes = raw.get().getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(200, bytes.length);
+        exchange.getResponseBody().write(bytes);
+      } finally { exchange.close(); }
+    });
+    JevClient client = new JevClient("test-key", "http://127.0.0.1:" + server.getAddress().getPort()
+        + "/envelope", "jev-1.13.0", 3000, 20);
+    String answer = "\"q0\":{\"type\":\"noul\",\"noul\":0.9}";
+    List<String> invalid = List.of(
+        "{\"answers\":{" + answer + "}}",
+        "{\"model\":\"other\",\"answers\":{" + answer + "}}",
+        "{\"model\":\"jev-1.13.0\",\"answers\":{" + answer + ",\"extra\":\"REMOTE_PRIVATE\"}}",
+        "{\"model\":\"other\",\"model\":\"jev-1.13.0\",\"answers\":{" + answer + "}}",
+        "{\"model\":\"jev-1.13.0\",\"answers\":{" + answer + "," + answer + "}}",
+        "{\"model\":\"jev-1.13.0\",\"answers\":[]}");
+    for (String candidate : invalid) {
+      raw.set(candidate);
+      for (int repeat=0;repeat<2;repeat++) {
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+            () -> client.evaluate("synthetic", List.of("condition")));
+        assertFalse(error.getMessage().contains("REMOTE_PRIVATE"));
+        assertNull(error.getCause());
+      }
+    }
+    assertEquals(invalid.size()*2, attempts.get());
+    raw.set("{\"model\":\"jev-1.13.0\",\"answers\":{" + answer + "}}");
+    assertArrayEquals(new double[]{0.9}, client.evaluate("synthetic", List.of("condition")));
+    assertArrayEquals(new double[]{0.9}, client.evaluate("synthetic", List.of("condition")));
+    assertEquals(invalid.size()*2+1, attempts.get());
   }
 
   private JevClient client(int maxRequests) {
