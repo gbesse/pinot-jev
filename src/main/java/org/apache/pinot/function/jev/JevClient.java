@@ -33,7 +33,7 @@ final class JevClient {
   private static final int MAX_RESPONSE = 1048576;
   private static final int MAX_CACHE_ENTRIES = 4096;
   private static final int MAX_CACHE_BYTES = 8 * 1048576;
-  private static final ObjectMapper JSON = new ObjectMapper();
+  private static final ObjectMapper JSON = new ObjectMapper().enable(com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
 
   private final HttpClient http;
   private final URI endpoint;
@@ -168,7 +168,13 @@ final class JevClient {
     try {
       HttpResponse<byte[]> response = pending.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
       if (response.statusCode() != 200) throw new IllegalStateException("Jev HTTP " + response.statusCode());
-      JsonNode answers = JSON.readTree(response.body()).path("answers");
+      JsonNode envelope = JSON.readTree(response.body());
+      if (envelope == null || !envelope.isObject() || !envelope.path("model").isTextual()
+          || !model.equals(envelope.path("model").textValue()) || !envelope.path("answers").isObject()
+          || envelope.path("answers").size() != count) {
+        throw new IllegalStateException("Enveloppe Jev ou modele inattendu / Unexpected Jev envelope or model / Envoltura Jev o modelo inesperado");
+      }
+      JsonNode answers = envelope.path("answers");
       double[] values = new double[count];
       for (int i = 0; i < count; i++) {
         JsonNode answer = answers.path("q" + i);
