@@ -58,10 +58,13 @@ final class JevClient {
   }
 
   JevClient(String key, String endpoint, String model, int timeoutMs, int maxRequests) {
-    if (key == null || key.isEmpty() || key.indexOf('\n') >= 0) {
-      throw new IllegalArgumentException("invalid API key");
+    if (key == null || key.trim().isEmpty() || key.indexOf('\n') >= 0 || key.indexOf('\r') >= 0) {
+      throw new IllegalArgumentException("Cle API invalide / invalid API key / Clave API no valida");
     }
-    this.endpoint = URI.create(endpoint);
+    try { this.endpoint = URI.create(endpoint); }
+    catch (RuntimeException invalid) { throw new IllegalArgumentException("URL Jev invalide / Invalid Jev URL / URL Jev no valida"); }
+    if (this.endpoint.getHost() == null || this.endpoint.getUserInfo() != null || this.endpoint.getFragment() != null || this.endpoint.getPort() > 65535 || this.endpoint.getPort() == 0)
+      throw new IllegalArgumentException("URL Jev avec identite ou fragment invalide / Jev URL identity or fragment invalid / Identidad o fragmento de URL Jev no valido");
     boolean loopback = "http".equals(this.endpoint.getScheme())
         && "127.0.0.1".equals(this.endpoint.getHost());
     if (!"https".equals(this.endpoint.getScheme()) && !loopback) {
