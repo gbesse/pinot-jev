@@ -119,3 +119,11 @@ FR — Les réponses doivent déclarer le modèle demandé et exactement les ré
 EN — Responses must declare the requested model and exactly the expected answers. Duplicate JSON keys, missing/different models and extra answers are rejected before caching. Rejected responses cannot authorize SQL predicates or poison cache; diagnostics contain neither remote bodies nor raw causes.
 
 ES — Respuestas deben declarar modelo solicitado y exactamente las respuestas esperadas. Claves JSON duplicadas, modelos ausentes/distintos y respuestas adicionales se rechazan antes de caché. Respuestas rechazadas no autorizan predicados SQL ni contaminan caché; diagnósticos no contienen cuerpo remoto ni causa sin filtrar.
+
+## URL / URL / URL
+
+FR — Les URL avec identifiants intégrés, fragment, hôte absent ou port invalide sont refusées à la construction du client ; les erreurs ne recopient pas l’URL ni la clé.
+
+EN — URLs containing embedded credentials, fragments, missing hosts or invalid ports are rejected at client construction; errors do not echo the URL or key.
+
+ES — URL con credenciales integradas, fragmentos, host ausente o puertos inválidos se rechazan al construir el cliente; los errores no repiten URL ni clave.
