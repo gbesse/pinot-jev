@@ -127,3 +127,11 @@ FR — Les URL avec identifiants intégrés, fragment, hôte absent ou port inva
 EN — URLs containing embedded credentials, fragments, missing hosts or invalid ports are rejected at client construction; errors do not echo the URL or key.
 
 ES — URL con credenciales integradas, fragmentos, host ausente o puertos inválidos se rechazan al construir el cliente; los errores no repiten URL ni clave.
+
+## JSON framing / Cadrage JSON / Encuadre JSON
+
+FR — Un second document JSON après les conditions ou la réponse est refusé. Les échecs ne remplissent pas le cache ; une réponse valide suivante reste utilisable.
+
+EN — A second JSON document after conditions or response is rejected. Failures do not populate the cache; a later valid response remains usable.
+
+ES — Se rechaza un segundo documento JSON tras condiciones o respuesta. Los fallos no llenan la caché; una respuesta válida posterior sigue siendo utilizable.

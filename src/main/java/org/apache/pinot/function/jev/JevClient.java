@@ -33,7 +33,7 @@ final class JevClient {
   private static final int MAX_RESPONSE = 1048576;
   private static final int MAX_CACHE_ENTRIES = 4096;
   private static final int MAX_CACHE_BYTES = 8 * 1048576;
-  private static final ObjectMapper JSON = new ObjectMapper().enable(com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+  private static final ObjectMapper JSON = new ObjectMapper().enable(com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION).enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
   private final HttpClient http;
   private final URI endpoint;
