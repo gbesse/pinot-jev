@@ -71,6 +71,7 @@ class JevClientTest {
   void validatesConditionsAndProtocol() {
     assertEquals(2, JevClient.conditions("[\"a\",\"b\"]").size());
     assertThrows(IllegalArgumentException.class, () -> JevClient.conditions("[]"));
+    assertThrows(IllegalArgumentException.class, () -> JevClient.conditions("[\"a\"] []"));
     assertThrows(IllegalArgumentException.class, () -> JevClient.conditions("[1]"));
     assertThrows(IllegalArgumentException.class, () -> JevClient.conditions("not JSON"));
     assertThrows(IllegalArgumentException.class,
@@ -193,7 +194,8 @@ class JevClientTest {
         "{\"model\":\"jev-1.13.0\",\"answers\":{" + answer + ",\"extra\":\"REMOTE_PRIVATE\"}}",
         "{\"model\":\"other\",\"model\":\"jev-1.13.0\",\"answers\":{" + answer + "}}",
         "{\"model\":\"jev-1.13.0\",\"answers\":{" + answer + "," + answer + "}}",
-        "{\"model\":\"jev-1.13.0\",\"answers\":[]}");
+        "{\"model\":\"jev-1.13.0\",\"answers\":[]}",
+        "{\"model\":\"jev-1.13.0\",\"answers\":{" + answer + "}} {}");
     for (String candidate : invalid) {
       raw.set(candidate);
       for (int repeat=0;repeat<2;repeat++) {
