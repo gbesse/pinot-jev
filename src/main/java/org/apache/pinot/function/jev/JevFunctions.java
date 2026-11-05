@@ -37,4 +37,29 @@ public final class JevFunctions {
     if (value == null || condition == null) return 0;
     return Holder.CLIENT.evaluate(value, Collections.singletonList(condition))[0];
   }
+
+  static double threshold(double value) {
+    if (!Double.isFinite(value) || value < 0.5 || value > 1) throw new IllegalArgumentException("Seuil invalide / Invalid threshold / Umbral invalido");
+    return value;
+  }
+  static int aggregateAt(double[] probabilities, double value, boolean all) {
+    threshold(value);
+    for (double p : probabilities) {
+      if (all && p < value) return 0;
+      if (!all && p >= value) return 1;
+    }
+    return all ? 1 : 0;
+  }
+  @ScalarFunction
+  public static int jevAllAt(String value, String conditionsJson, double minimumProbability) {
+    threshold(minimumProbability);
+    if (value == null || conditionsJson == null) return 0;
+    return aggregateAt(Holder.CLIENT.evaluate(value, JevClient.conditions(conditionsJson)), minimumProbability, true);
+  }
+  @ScalarFunction
+  public static int jevAnyAt(String value, String conditionsJson, double minimumProbability) {
+    threshold(minimumProbability);
+    if (value == null || conditionsJson == null) return 0;
+    return aggregateAt(Holder.CLIENT.evaluate(value, JevClient.conditions(conditionsJson)), minimumProbability, false);
+  }
 }

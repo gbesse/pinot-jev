@@ -135,3 +135,14 @@ FR — Un second document JSON après les conditions ou la réponse est refusé.
 EN — A second JSON document after conditions or response is rejected. Failures do not populate the cache; a later valid response remains usable.
 
 ES — Se rechaza un segundo documento JSON tras condiciones o respuesta. Los fallos no llenan la caché; una respuesta válida posterior sigue siendo utilizable.
+
+
+## 2026-11-05 — FR / EN / ES
+
+FR : SQL `jevAllAt(value,conditionsJson,minimumProbability)` et `jevAnyAt(...)` ajoutent un seuil explicite entre0.5 et1 ; les anciennes fonctions gardent0.5. Exemple .91/.84 : ALL à.8 passe, ALL à.9 échoue, ANY à.9 passe. Filtre déterministe sur probabilités, pas calibration garantie.
+
+EN: SQL `jevAllAt(value,conditionsJson,minimumProbability)` and `jevAnyAt(...)` add explicit0.5–1 thresholds; old functions retain0.5. For .91/.84, ALL at.8 passes, ALL at.9 fails, ANY at.9 passes. Deterministic probability filter, not guaranteed calibration.
+
+ES: SQL `jevAllAt(value,conditionsJson,minimumProbability)` y `jevAnyAt(...)` añaden umbral explícito0.5–1; funciones anteriores mantienen0.5. Para .91/.84, ALL a.8 pasa, ALL a.9 falla, ANY a.9 pasa. Filtro determinista, no calibración garantizada.
+
+FR : Maven local absent ; compilation/tests de framework exigés dans la CI exacte avant fusion. EN: Local Maven unavailable; exact CI framework build/tests required before merge. ES: Maven local ausente; CI exacta de compilación/pruebas de framework requerida antes de fusionar.
