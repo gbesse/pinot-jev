@@ -146,3 +146,12 @@ EN: SQL `jevAllAt(value,conditionsJson,minimumProbability)` and `jevAnyAt(...)` 
 ES: SQL `jevAllAt(value,conditionsJson,minimumProbability)` y `jevAnyAt(...)` añaden umbral explícito0.5–1; funciones anteriores mantienen0.5. Para .91/.84, ALL a.8 pasa, ALL a.9 falla, ANY a.9 pasa. Filtro determinista, no calibración garantizada.
 
 FR : Maven local absent ; compilation/tests de framework exigés dans la CI exacte avant fusion. EN: Local Maven unavailable; exact CI framework build/tests required before merge. ES: Maven local ausente; CI exacta de compilación/pruebas de framework requerida antes de fusionar.
+
+
+## 2026-11-12 — FR / EN / ES
+
+FR : Compter les conditions sémantiques satisfaites avec jevCountAt et un seuil explicite.
+
+EN: Count satisfied semantic conditions with jevCountAt and an explicit threshold.
+
+ES: Contar condiciones semánticas satisfechas con jevCountAt y umbral explícito.
