@@ -62,4 +62,15 @@ public final class JevFunctions {
     if (value == null || conditionsJson == null) return 0;
     return aggregateAt(Holder.CLIENT.evaluate(value, JevClient.conditions(conditionsJson)), minimumProbability, false);
   }
+
+  static int countAt(double[] probabilities,double minimum){
+    threshold(minimum);int count=0;
+    for(double p:probabilities){if(!Double.isFinite(p)||p<0||p>1)throw new IllegalArgumentException("Probabilite invalide / Invalid probability / Probabilidad invalida");if(p>=minimum)count++;}
+    return count;
+  }
+  @ScalarFunction
+  public static int jevCountAt(String value,String conditionsJson,double minimumProbability){
+    threshold(minimumProbability);if(value==null||conditionsJson==null)return 0;
+    return countAt(Holder.CLIENT.evaluate(value,JevClient.conditions(conditionsJson)),minimumProbability);
+  }
 }
